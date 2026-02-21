@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  nextcloud:
+    image: nextcloud:apache
+    container_name: nextcloud
+    restart: unless-stopped
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - /data/nextcloud/app:/var/www/html
+    environment:
+      MYSQL_HOST: db
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_PASSWORD: CHANGE_DB_PASSWORD
+      REDIS_HOST: redis
+      PHP_MEMORY_LIMIT: 1024M
+      PHP_UPLOAD_LIMIT: 10G
+    networks:
+      - nginx-proxy-default
+
+  db:
+    image: mariadb:10.11
+    container_name: nextcloud_db
+    restart: unless-stopped
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    volumes:
+      - /data/nextcloud/db:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: CHANGE_ROOT_PASSWORD
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_PASSWORD: CHANGE_DB_PASSWORD
+    networks:
+      - nginx-proxy-default
+
+  redis:
+    image: redis:alpine
+    container_name: nextcloud_redis
+    restart: unless-stopped
+    volumes:
+      - /data/nextcloud/redis:/data
+    networks:
+      - nginx-proxy-default
+
+networks:
+  nginx-proxy-default:
+    external: true
